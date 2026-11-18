@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>经营管理驾驶舱</title>
+<meta name="description" content="漫剧招生、漫剧制作、企业AI服务、企业销售经营看板（示例数据）">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%2314957a'/%3E%3Cpath d='M8 26a12 12 0 0 1 24 0' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M20 26l7.5-8' stroke='%23ffd66b' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>html,body{margin:0;padding:0;background:#f1fdf9}</style>
+</head>
+<body>
+<div id="dash-root">
+<style>
+/* 布局：薄荷绿渐变底 + 发光描边的主框；每页先一排带迷你图的指标卡，再是 12 栏卡片网格 */
+#dash-root { --dash-gutter: 0; }
+.bz {
+  --bg: #eaf6f1; --panel: #ffffff; --line: #e3eee9; --fg: #14302a; --muted: #4f6963; --faint: #576f69;
+  --teal: #14957a; --mint: #4fcfa8; --amber: #f5b83d; --sky: #4b8bf0; --coral: #f06b47; --violet: #8b78e6;
+  --ok: #0c6f4b; --warn: #8a5606; --bad: #b8301c; --teal-t: #0b6b58;
+  --font: "PingFang SC", "HarmonyOS Sans SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", var(--font-anthropic-sans, system-ui), system-ui, sans-serif;
+  --num: "DIN Alternate", "DIN Pro", "Bahnschrift", "Barlow", "Roboto", "Helvetica Neue", Arial, var(--font-anthropic-sans, system-ui), sans-serif;
+  --shadow: 0 1px 2px rgba(20, 48, 42, 0.04), 0 10px 28px -14px rgba(20, 80, 64, 0.22);
+  color-scheme: light; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #e3f8f0 0%, #f1fdf9 32%, #f6fdfa 100%);
+  color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.5;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 28px max(16px, env(safe-area-inset-left, 0px));
+}
+.bz *, .bz *::before, .bz *::after { box-sizing: border-box; }
+.bz [hidden] { display: none !important; }
+.bz-deco { display: none; }
+.bz-head, .bz-frame, .bz-foot { position: relative; max-width: 1480px; margin-left: auto; margin-right: auto; }
+.bz-head { padding-top: 22px; }
+.bz-head-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 20px; }
+.bz-brand { display: flex; align-items: center; gap: 14px; }
+.bz-logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, #3fd1a8, #10856c); box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.18); }
+.bz-logo svg { width: 36px; height: 36px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; }
+.bz-brand h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.15; }
+.bz-asof { color: var(--muted); font-size: 13px; letter-spacing: 0.06em; }
+.bz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bz-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; border-radius: 999px; background: rgba(255,255,255,0.8); border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.bz-chip .ic { width: 22px; height: 22px; border-radius: 999px; }
+.bz-chip .ic svg { width: 13px; height: 13px; }
+.bz-chip.sample { padding-left: 12px; background: #fff4da; border-color: #f6dfa5; color: #8a5a00; }
+.bz-chip.risk { padding-left: 12px; background: #ffece8; border-color: #f8cfc6; color: var(--bad); }
+.bz-chip.risk b { font-family: var(--num); font-size: 15px; }
+.bz-take { margin: 12px 0 14px; font-size: 15px; color: var(--fg); }
+.bz-take b { font-family: var(--num); font-size: 17px; color: var(--teal-t); padding: 0 2px; font-variant-numeric: tabular-nums; }
+.bz-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px; background: rgba(255,255,255,0.65); border: 1px solid var(--line); border-radius: 16px; width: max-content; max-width: 100%; backdrop-filter: blur(6px); }
+.bz-tabs::-webkit-scrollbar { display: none; }
+.bz-tab { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14.5px; font-weight: 600; padding: 9px 16px; border-radius: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.bz-tab svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bz-tab:hover { color: var(--fg); background: rgba(20,149,122,0.07); }
+.bz-tab.on { color: #fff; background: linear-gradient(135deg, #0c7a63, #0a5f4f); box-shadow: 0 3px 8px -3px rgba(0, 0, 0, 0.18); }
+.bz-tab:focus-visible, .bz-seg button:focus-visible, .bz-link:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+
+.bz-frame { margin-top: 16px; padding: 18px; border-radius: 28px; border: 2px solid transparent;
+  background: #f7fdfb; border-color: #5fcfae;
+  box-shadow: 0 24px 48px -36px rgba(0, 0, 0, 0.18); }
+.bz-sec { display: grid; gap: 16px; }
+.bz-sec-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.bz-sec-h h2 { margin: 0; font-size: 20px; font-weight: 800; }
+.bz-sec-h p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.ic { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; flex: none; }
+.ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ic.t { background: #dcf4ec; color: var(--teal-t); } .ic.m { background: #e1f8f0; color: #1bb48c; }
+.ic.a { background: #fff2d4; color: #d7930d; } .ic.s { background: #e2ecfe; color: #3a72dc; }
+.ic.c { background: #ffe6df; color: var(--coral); } .ic.v { background: #ece8fd; color: var(--violet); }
+
+.bz-kpis { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kc { position: relative; background: var(--panel); border-radius: 20px; padding: 16px 18px 14px; box-shadow: var(--shadow); border: 1px solid var(--line); overflow: hidden; min-width: 0; min-height: 132px; }
+.kc.alarm { background: linear-gradient(180deg, #fff6f3, #fff 60%); border-color: #f9d7ce; }
+.kc.warn { background: linear-gradient(180deg, #fffaf0, #fff 60%); border-color: #f6e2b5; }
+.kc-h { display: flex; align-items: center; gap: 10px; }
+.kc-l { color: var(--muted); font-size: 13.5px; font-weight: 600; }
+.kc-v { display: flex; align-items: baseline; gap: 3px; margin-top: 10px; position: relative; z-index: 1; }
+.kc-v > b { font-family: var(--num); font-size: 32px; font-weight: 700; line-height: 1; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.u { color: var(--muted); font-size: 13px; font-weight: 600; }
+.u.pre { font-size: 16px; margin-right: 1px; }
+.kc-d { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12.5px; color: var(--muted); max-width: 56%; position: relative; z-index: 1; }
+.kc-d b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.kc-d .warn { color: var(--warn); font-weight: 600; }
+.kc-sp { position: absolute; right: 12px; bottom: 12px; width: 38%; height: 46px; }
+.dl { display: inline-flex; align-items: center; gap: 2px; padding: 1px 8px; border-radius: 999px; font-weight: 700; font-size: 12px; background: #eef3f1; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dl.bz-good { background: #ddf5ea; color: var(--ok); }
+.dl.bz-bad { background: #ffe5df; color: var(--bad); }
+.dl.bz-up::before { content: "▲"; font-size: 9px; margin-right: 2px; }
+.dl.bz-down::before { content: "▼"; font-size: 9px; margin-right: 2px; }
+
+.bz-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.bz-card { background: var(--panel); border-radius: 20px; padding: 18px; min-width: 0; box-shadow: var(--shadow); border: 1px solid var(--line); grid-column: span 12; position: relative; }
+.s3 { grid-column: span 3; } .s4 { grid-column: span 4; } .s5 { grid-column: span 5; } .s6 { grid-column: span 6; } .s7 { grid-column: span 7; } .s8 { grid-column: span 8; }
+.bz-card-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 12px; }
+.bz-card-h h3 { margin: 0; font-size: 15.5px; font-weight: 800; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; }
+.bz-card-h .sub { color: var(--faint); font-size: 12px; font-weight: 500; }
+.bz-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.bz-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.bz-legend i.ln { width: 16px; height: 3px; border-radius: 2px; vertical-align: 3px; }
+.bz-legend i.dsh { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed currentColor; background: none !important; vertical-align: 3px; }
+.bz-ch { position: relative; min-height: 210px; }
+.bz-ch.short { min-height: 110px; }
+.bz-ch svg { display: block; overflow: visible; }
+.bz-split { height: 1px; background: linear-gradient(90deg, transparent, var(--line), transparent); margin: 14px 0; }
+
+/* 图表文字 */
+.bz-tick { fill: var(--muted); font-size: 12px; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.bz-gl { stroke: #e9f1ee; stroke-dasharray: 3 4; }
+.bz-lbl { fill: var(--fg); font-size: 12px; font-family: var(--font); }
+.bz-lbl-s { fill: var(--muted); font-size: 12px; font-family: var(--font); }
+.bz-lbl-b { fill: var(--fg); font-size: 13px; font-weight: 700; font-family: var(--font); }
+.bz-sub { fill: var(--faint); font-size: 12px; font-family: var(--font); }
+.bz-val { fill: var(--muted); font-size: 12px; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.bz-val-b { fill: var(--fg); font-size: 12px; font-weight: 700; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.bz-axis-t { fill: var(--faint); font-size: 12px; font-family: var(--font); }
+.bz-marker { stroke: #14302a; stroke-width: 3; stroke-linecap: round; }
+.bz-ref { stroke: var(--coral); stroke-dasharray: 5 4; stroke-width: 1.4; }
+.bz-ref-t { fill: var(--coral); font-size: 12px; font-weight: 600; font-family: var(--font); }
+.bz-hl { fill: rgba(20,149,122,0.07); pointer-events: none; }
+.bz-guide { stroke: rgba(20,149,122,0.35); stroke-dasharray: 3 3; pointer-events: none; }
+.bz-donut-v { fill: var(--fg); font-family: var(--num); font-size: 22px; font-weight: 800; }
+.bz-donut-l { fill: var(--faint); font-size: 12px; font-family: var(--font); }
+.bz-funnel-v { fill: #fff; font-family: var(--num); font-size: 14px; font-weight: 800; }
+.bz-funnel-v.dark { fill: #0f4a3c; }
+.bz-conv { fill: var(--teal); font-size: 12px; font-weight: 700; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.bz-bar-t { fill: #fff; font-size: 12px; font-weight: 700; font-family: var(--font); }
+.bz-today { stroke: var(--coral); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.bz-today-t { fill: #fff; font-size: 12px; font-weight: 700; font-family: var(--font); }
+.bz-ring-t { fill: var(--fg); font-family: var(--num); font-size: 15px; font-weight: 800; }
+.bz-ph { display: grid; place-items: center; min-height: 160px; color: var(--faint); }
+
+.bz-tip { position: absolute; z-index: 5; pointer-events: none; min-width: 150px; max-width: 260px; background: rgba(255,255,255,0.97); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 12px 28px -10px rgba(20,48,42,0.3); padding: 10px 12px; font-size: 12px; backdrop-filter: blur(4px); }
+.bz-tip-t { font-weight: 800; margin-bottom: 6px; font-size: 12.5px; }
+.bz-tip-r { display: flex; align-items: center; gap: 7px; color: var(--muted); line-height: 1.8; }
+.bz-tip-r i { width: 3px; height: 14px; border-radius: 2px; flex: none; }
+.bz-tip-r b { margin-left: auto; color: var(--fg); font-variant-numeric: tabular-nums; padding-left: 12px; font-family: var(--num); font-size: 13px; }
+
+/* 仪表盘 */
+.bz-gw { position: relative; }
+.bz-gv { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; display: grid; justify-items: center; pointer-events: none; }
+.bz-gv b { font-family: var(--num); font-size: 26px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.bz-gv span { color: var(--muted); font-size: 12px; }
+.bz-gstrip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr); gap: 10px 18px; align-items: center; }
+.bz-gcol { display: grid; align-content: start; gap: 8px; }
+.bz-gside { display: grid; gap: 10px; }
+.bz-gside > div { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 12px; padding: 12px 14px; background: #f5faf8; border-radius: 14px; }
+.bz-gside > div > span { color: var(--muted); font-size: 12.5px; grid-column: 2; }
+.bz-gside em { grid-column: 2; font-style: normal; font-size: 12px; color: var(--faint); }
+.bz-gside em span { font-size: 12px; }
+.bz-gside .mv { grid-column: 2; font-family: var(--num); font-size: 24px; font-weight: 800; line-height: 1.2; }
+.bz-gside .mv span { font-size: inherit; color: var(--fg); }
+.bz-gside .ic { grid-row: 1 / 4; grid-column: 1; }
+.mv small, .bz-hero-v span { font-family: var(--font); font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 2px; }
+
+/* 迷你统计 */
+.bz-mini3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.bz-mini3.two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 8px; }
+.bz-mini3 > div { background: #f5faf8; border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.bz-mini3 span:first-child { color: var(--muted); font-size: 12px; }
+.bz-mini3 b, .bz-mini3 .mv { font-family: var(--num); font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.bz-hero { background: linear-gradient(160deg, #ffffff 0%, #f1fbf7 60%, #e3f6ef 100%); }
+.bz-hero-v { display: flex; align-items: baseline; gap: 4px; }
+.bz-hero-v b { font-family: var(--num); font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: 0.01em; color: var(--teal-t); }
+.bz-hero-s { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.bz-hero-s b { color: var(--fg); }
+.bz-hero-s .warn, .bz-hero-s .warn b { color: var(--warn); }
+.bz-stat3 { display: grid; gap: 10px; }
+.bz-stat3 > div { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #f5faf8; border-radius: 14px; }
+.bz-stat3 > div > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0 10px; flex: 1; min-width: 0; }
+.bz-stat3 span:first-child { color: var(--muted); font-size: 12.5px; grid-column: 1 / 3; }
+.bz-stat3 b, .bz-stat3 .mv { font-family: var(--num); font-size: 20px; font-weight: 800; }
+.bz-stat3 em { font-style: normal; font-size: 12px; color: var(--faint); justify-self: end; }
+.bz-cash { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+.bz-cash > div { border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.bz-cash span { font-size: 12px; color: var(--muted); }
+.bz-cash b { font-family: var(--num); font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bz-cash .c1 { background: #e3f6ef; } .bz-cash .c2 { background: #fff4dc; } .bz-cash .c3 { background: #ffebe5; }
+.bz-link { border: 0; background: none; color: var(--teal-t); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 2px 4px; }
+
+/* 表格 */
+.bz-tw { overflow-x: auto; margin: 0 -4px; }
+.bz-tw.tall { max-height: 520px; overflow-y: auto; }
+.bz table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.bz th { text-align: left; font-weight: 700; color: var(--muted); font-size: 12px; background: #f1f8f5; padding: 10px 12px; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+.bz th:first-child { border-radius: 10px 0 0 10px; } .bz th:last-child { border-radius: 0 10px 10px 0; }
+.bz td { padding: 11px 12px; border-bottom: 1px solid #edf4f1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bz th.num, .bz td.num { text-align: right; }
+.bz tbody tr { transition: background 0.12s; }
+.bz tbody tr:hover td { background: #f4fbf8; }
+.bz-strong { font-weight: 700; }
+.bz-muted { color: var(--muted); }
+.bz-mono { font-family: var(--num); color: var(--muted); }
+.bz-meter { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+.bz-meter-bar { flex: 1; height: 7px; background: #ecf3f0; border-radius: 4px; overflow: hidden; min-width: 56px; }
+.bz-meter-bar i { display: block; height: 100%; border-radius: 4px; }
+.bz-meter span { width: 3.4em; text-align: right; font-size: 12px; font-weight: 700; }
+.bz-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.bz-pill-ok { background: #dff5eb; color: var(--ok); } .bz-pill-warn { background: #fff0d2; color: var(--warn); } .bz-pill-bad { background: #ffe3dc; color: var(--bad); }
+.bz-pill-teal { background: #dcf4ec; color: #0f7863; } .bz-pill-sky { background: #e2ecfe; color: #2f62c4; } .bz-pill-amber { background: #fff0d2; color: #8a5a00; }
+.bz-who { display: flex; align-items: center; gap: 8px; }
+.bz-av { width: 32px; height: 32px; border-radius: 50%; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; flex: none; box-shadow: 0 0 0 2px #fff, 0 3px 8px -2px rgba(20,48,42,0.3); }
+
+/* 预警 */
+.bz-alerts { display: grid; gap: 10px; }
+.bz-alert { display: flex; gap: 10px; padding: 10px 12px; border-radius: 14px; background: #f5f9f7; }
+.bz-alert.hi { background: #fff3ef; }
+.bz-alert.mid { background: #fff8ea; }
+.bz-alert-ic { width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; flex: none; background: #c98a12; }
+.bz-alert.hi .bz-alert-ic { background: linear-gradient(135deg, #ff8a6a, #e5482d); }
+.bz-alert-b { min-width: 0; flex: 1; }
+.bz-alert-top { display: flex; align-items: center; gap: 8px; }
+.bz-alert-top b { font-size: 13.5px; }
+.bz-alert-area { margin-left: auto; color: var(--faint); font-size: 12px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,0.8); }
+.bz-alert-item { margin-top: 2px; font-size: 13px; overflow-wrap: anywhere; }
+.bz-alert-detail { color: var(--muted); font-size: 12px; }
+.bz-empty, .bz-more { color: var(--faint); font-size: 12.5px; padding: 4px 2px; }
+.bz-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 999px; background: #ffe7e1; color: var(--bad); font-size: 12px; font-weight: 700; }
+.bz-risk { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.bz-rt { border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); border: 1px solid var(--line); background: #fff; position: relative; overflow: hidden; }
+.bz-rt.hi { background: linear-gradient(160deg, #fff, #fff3ef); }
+.bz-rt-a { font-size: 13px; color: var(--muted); font-weight: 700; }
+.bz-rt-n { font-family: var(--num); font-size: 30px; font-weight: 800; line-height: 1.2; }
+.bz-rt.hi .bz-rt-n { color: var(--bad); }
+.bz-rt-s { font-size: 12px; color: var(--faint); }
+
+/* 开班地点 */
+.bz-sites { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.bz-site { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #f3f9f6; }
+.bz-site-ring { display: grid; justify-items: center; gap: 2px; }
+.bz-site-rl { font-size: 12px; color: var(--faint); }
+.bz-site-i { flex: 1; min-width: 0; }
+.bz-site-n { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+.bz-site-g { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 8px; }
+.bz-site-g div { display: grid; }
+.bz-site-g span { font-size: 12px; color: var(--faint); }
+.bz-site-g b { font-family: var(--num); font-size: 15px; }
+.bz-site-g b.bad { color: var(--bad); }
+
+/* AI 交付管线 */
+.bz-pl { display: grid; overflow-x: auto; }
+.bz-pl-row { display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(320px, 3fr) 92px; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px dashed #e4eeea; min-width: 620px; }
+.bz-pl-head { border-bottom: 0; padding-bottom: 8px; }
+.bz-pl-name b { display: block; font-size: 13.5px; }
+.bz-pl-name span { font-size: 12px; color: var(--faint); }
+.bz-pl-track { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bz-pl-h { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; }
+.bz-pl-c { position: relative; display: grid; place-items: center; height: 30px; }
+.bz-pl-c::before { content: ""; position: absolute; left: -50%; right: 50%; top: 50%; height: 4px; margin-top: -2px; background: #e6efeb; }
+.bz-pl-c.first::before { display: none; }
+.bz-pl-c.done::before, .bz-pl-c.cur::before { background: linear-gradient(90deg, var(--mint), var(--teal)); }
+.bz-pl-c.cur.late::before { background: linear-gradient(90deg, var(--mint), var(--coral)); }
+.bz-pl-c i { position: relative; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #dfe9e5; display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 900; color: #fff; }
+.bz-pl-c.done i { background: var(--mint); border-color: var(--mint); }
+.bz-pl-c.cur i { width: 26px; height: 26px; background: var(--teal); border-color: #bfeadb; box-shadow: 0 0 0 4px #ffffff, 0 0 0 5px #9fdcc8; }
+.bz-pl-c.cur.late i { background: var(--coral); border-color: #ffd2c6; box-shadow: 0 0 0 4px #ffffff, 0 0 0 5px #f6b4a2; }
+.bz-pl-st { text-align: right; }
+
+/* 排行榜 */
+.bz-board { display: grid; gap: 10px; }
+.bz-pod { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 8px; padding-top: 6px; }
+.bz-pod-c { display: grid; justify-items: center; text-align: center; gap: 2px; min-width: 0; }
+.bz-pod-av { position: relative; margin-bottom: 4px; }
+.bz-pod-rank { position: absolute; right: -6px; bottom: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: #fff; background: #c9d8d2; box-shadow: 0 0 0 2px #fff; }
+.p1 .bz-pod-rank { background: linear-gradient(135deg, #ffd25e, #f0a01c); color: #3d2600; }
+.p2 .bz-pod-rank { background: linear-gradient(135deg, #cbd8e6, #93a6bd); color: #1d2a3b; }
+.p3 .bz-pod-rank { background: linear-gradient(135deg, #f1b88a, #c9783f); color: #3b1e08; }
+.bz-pod-n { font-weight: 800; font-size: 13.5px; }
+.bz-pod-v { font-family: var(--num); font-weight: 800; font-size: 16px; color: var(--teal-t); }
+.bz-pod-g { font-size: 12px; color: var(--faint); }
+.bz-pod-base { width: 100%; margin-top: 6px; border-radius: 12px 12px 4px 4px; background: linear-gradient(180deg, #d9f3ea, #f1faf7); height: 34px; }
+.p1 .bz-pod-base { height: 54px; background: linear-gradient(180deg, #bdebd9, #e8f8f2); }
+.p3 .bz-pod-base { height: 22px; }
+.bz-rk { display: grid; gap: 4px; background: #f7fbf9; border-radius: 14px; padding: 6px; }
+.bz-rk-r { display: grid; grid-template-columns: 20px 26px minmax(60px, 0.9fr) minmax(40px, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: #fff; }
+.bz-rk-r.last { background: #fff4f1; }
+.bz-rk-i { font-family: var(--num); font-weight: 800; color: var(--faint); text-align: center; }
+.bz-rk-n { display: grid; line-height: 1.25; min-width: 0; }
+.bz-rk-n b { font-size: 13px; } .bz-rk-n span { font-size: 12px; color: var(--faint); }
+.bz-rk-bar { height: 6px; background: #ecf3f0; border-radius: 3px; overflow: hidden; }
+.bz-rk-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--mint), var(--teal)); }
+.bz-rk-v { font-family: var(--num); font-weight: 800; font-size: 13px; text-align: right; }
+
+.bz-seg { display: inline-flex; background: #eef6f3; border-radius: 12px; padding: 4px; gap: 2px; flex-wrap: wrap; }
+.bz-seg button { border: 0; background: transparent; font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 14px; border-radius: 9px; color: var(--muted); cursor: pointer; }
+.bz-seg button.on { background: #fff; color: var(--teal-t); font-weight: 800; box-shadow: 0 2px 6px rgba(20,48,42,0.1); }
+.bz-note { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+.bz-note summary { cursor: pointer; color: var(--fg); font-weight: 700; }
+.bz-foot { color: var(--faint); font-size: 12px; text-align: center; margin-top: 14px; }
+
+@media (max-width: 1180px) {
+  .bz-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .s3, .s4, .s5 { grid-column: span 6; } .s7, .s8 { grid-column: span 12; }
+  .bz-gstrip { grid-template-columns: repeat(3, minmax(0, 1fr)); } .bz-gstrip .bz-gside { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+  .bz-risk { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .bz-frame { padding: 10px; border-radius: 22px; }
+  .bz-card { grid-column: span 12 !important; padding: 14px; }
+  .bz-brand h1 { font-size: 22px; }
+  .kc-v > b { font-size: 26px; }
+  .kc-sp { width: 36%; height: 36px; }
+  .bz-kpis { gap: 10px; }
+  .kc { padding: 14px; min-height: 126px; }
+  .kc-d { max-width: 100%; }
+  .bz-gstrip { grid-template-columns: 1fr 1fr; } .bz-gstrip .bz-gside { grid-template-columns: 1fr; }
+  .bz-risk { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bz-cash { grid-template-columns: 1fr; }
+}
+@media (max-width: 460px) { .bz-kpis { grid-template-columns: 1fr; } .kc-sp { width: 40%; } }
+@media (prefers-reduced-motion: reduce) { .bz-tab, .bz tbody tr { transition: none; } }
+@media print { .bz-tabs, .bz-deco { display: none; } .bz-sec { break-before: page; } .bz-sec#ov { break-before: auto; } }
+
+.bz ::selection { background: #c8f0e2; color: var(--fg); }
+.bz :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.bz { scrollbar-color: #b5d8cc transparent; }
+.kc-s { margin-top: 6px; font-size: 12px; color: var(--muted); position: relative; z-index: 1; max-width: 64%; white-space: nowrap; }
+.kc-s b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.att-miss { color: var(--bad) !important; font-weight: 700; }
+.warn-t { color: var(--warn) !important; }
+.mini-t { margin-top: 10px; }
+.mini-t th { background: #f1f8f5; }
+.mini-t td { padding: 8px 12px; }
+.bz-fine { margin: 10px 0 0; font-size: 12px; color: var(--faint); }
+.bz-fine span { color: var(--fg); font-weight: 700; }
+
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+#c-ai-mix { align-self: start; }
+@media (max-width: 760px) { .bz-tabs { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); } }
+
+</style>
+<div class="bz">
+  <div class="bz-deco" aria-hidden="true"></div>
+  <header class="bz-head">
+    <div class="bz-head-row">
+      <div class="bz-brand">
+        <div class="bz-logo" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M8 26a12 12 0 0 1 24 0" fill="none" stroke="#ffffff" stroke-opacity=".4" stroke-width="4" stroke-linecap="round"/><path d="M8 26a12 12 0 0 1 17.5-10.7" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/><path d="M20 26l7.5-8" stroke="#ffd66b" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="26" r="3.2" fill="#ffffff"/><path d="M12 31h16" stroke="#ffffff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+        <div><h1>经营管理驾驶舱</h1><div class="bz-asof">漫剧招生 · 漫剧制作 · 企业AI服务 · 企业销售</div></div>
+      </div>
+      <div class="bz-chips"><span class="bz-chip"><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2"/></svg></span>数据截至 2026-10-31</span><span class="bz-chip sample">示例数据</span><span class="bz-chip risk">高风险预警 <b data-draw="alert_count" data-level="高" data-source="alerts">—</b> 条</span></div>
+    </div>
+    <p class="bz-take" id="takeaway">10 月营收 <b data-draw="v" data-source="kpi_ov" data-field="rev_m" data-row="0" data-fmt="d1">—</b> 万元，环比 <b data-draw="v" data-source="kpi_ov" data-field="rev_mom" data-row="0" data-fmt="dpct">—</b>；净利率 <b data-draw="v" data-source="kpi_ov" data-field="nm_m" data-row="0" data-fmt="pct">—</b>；在手订单 <b data-draw="v" data-source="kpi_ov" data-field="backlog" data-row="0" data-fmt="d1">—</b> 万元待交付。</p>
+    <nav class="bz-tabs" role="tablist" aria-label="业务板块"><button class="bz-tab on" role="tab" data-tab="ov" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>总看板</button><button class="bz-tab" role="tab" data-tab="edu" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5"/></svg>漫剧招生</button><button class="bz-tab" role="tab" data-tab="prod" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 9h16M4 15h16M9 4v16"/></svg>漫剧制作</button><button class="bz-tab" role="tab" data-tab="ai" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14v11H5zM12 4v4M9 13h.01M15 13h.01M9 16h6"/></svg>企业AI服务</button><button class="bz-tab" role="tab" data-tab="sales" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v13H3zM8 7V4h8v3M3 12h18"/></svg>企业服务销售</button><button class="bz-tab" role="tab" data-tab="all" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></svg>综合看板</button></nav>
+  </header>
+  <main class="bz-frame">
+
+<section class="bz-sec" id="ov">
+  <h2 class="sr">总看板</h2>
+  <div class="bz-kpis k4">
+    <div class="kc"><div class="kc-h"><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/></svg></span><span class="kc-l">10月营收</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ov" data-field="rev_m" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d"><span class="dl" data-draw="v" data-source="kpi_ov" data-field="rev_mom" data-row="0" data-fmt="dpct" data-good="up">—</span><span>较9月</span></div><div class="kc-s">示例目标 <b data-draw="v" data-source="kpi_ov" data-field="rev_target_m" data-row="0" data-fmt="d1">—</b>万 · 达成 <b data-draw="v" data-source="kpi_ov" data-field="rev_att" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="fin_monthly" data-col="revenue" data-color="#14957a" data-kind="area"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h15a3 3 0 013 3v7a3 3 0 01-3 3H6a3 3 0 01-3-3zM3 7l12-4v4M17 14h.01"/></svg></span><span class="kc-l">10月回款</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ov" data-field="collected_m" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d">回款/营收 <b data-draw="v" data-source="kpi_ov" data-field="collect_ratio" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="fin_monthly" data-col="collected" data-color="#4b8bf0" data-kind="area"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic m"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span><span class="kc-l">10月毛利</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ov" data-field="gp_m" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d"><span class="dl" data-draw="v" data-source="kpi_ov" data-field="gm_chg" data-row="0" data-fmt="dpp" data-good="up">—</span><span>毛利率较9月</span></div><div class="kc-s">毛利率 <b data-draw="v" data-source="kpi_ov" data-field="gm_m" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="fin_monthly" data-col="gross_profit" data-color="#4fcfa8" data-kind="area"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic a"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg></span><span class="kc-l">10月净利润</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ov" data-field="np_m" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d"><span class="dl" data-draw="v" data-source="kpi_ov" data-field="np_mom" data-row="0" data-fmt="dpct" data-good="up">—</span><span>较9月</span></div><div class="kc-s">示例目标 <b data-draw="v" data-source="kpi_ov" data-field="np_target_m" data-row="0" data-fmt="d1">—</b>万 · 达成 <b data-draw="v" data-source="kpi_ov" data-field="np_att" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="fin_monthly" data-col="net_profit" data-color="#f5b83d" data-kind="area"></div></div>
+  </div>
+  <div class="bz-grid">
+    <div class="bz-card s8 " id="c-ov-rev"><div class="bz-card-h"><h3>营收与目标<span class="sub">按月 · 各业务堆叠，虚线为月度目标</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>漫剧制作</span><span><i class="" style="background:#4fcfa8"></i>漫剧招生</span><span><i class="" style="background:#f5b83d"></i>企业AI服务</span><span><i class="dsh" style="background:#14302a"></i>月度目标（示例）</span><span><i class="ln" style="background:#4b8bf0"></i>回款</span></div></div><div class="bz-ch " data-draw="ov_rev" data-source="fin_monthly" aria-label="1–10月各业务营收、月度目标与回款"></div></div>
+    <div class="bz-card s4 " id="c-ov-mix"><div class="bz-card-h"><h3>营收结构<span class="sub">1–10月累计</span></h3></div><div class="bz-ch " data-draw="ov_mix" data-source="rev_mix" aria-label="各业务累计营收占比"></div><div class="bz-split"></div><div class="bz-mini3"><div><span>净利率</span><b data-draw="v" data-source="kpi_ov" data-field="nm_m" data-row="0" data-fmt="pct">—</b></div><div><span>毛利率</span><b data-draw="v" data-source="kpi_ov" data-field="gm_m" data-row="0" data-fmt="pct">—</b></div><div><span>累计营收</span><span class="mv"><b data-draw="v" data-source="kpi_ov" data-field="rev_ytd" data-row="0" data-fmt="d1">—</b><small>万</small></span></div></div></div>
+    <div class="bz-card s4" id="c-ov-target"><div class="bz-card-h"><h3>目标达成<span class="sub">10月 · 竖线为 100%</span></h3><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 16a4 4 0 100-8 4 4 0 000 8zM12 12h.01"/></svg></span></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_ov" data-col="rev_att" data-max="1.2" data-h="150" data-color="#14957a" data-color2="#4fcfa8" data-bands="0.9:#f06b47,1:#f5b83d,1.2:#4fcfa8" data-target="1" aria-label="10月营收达成率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_ov" data-field="rev_att" data-row="0" data-fmt="pct">—</b><span>10月营收达成率</span></div></div>
+      <table class="mini-t"><thead><tr><th>指标</th><th class="num">实际</th><th class="num">目标</th><th class="num">达成</th></tr></thead><tbody>
+        <tr><td>10月营收</td><td class="num"><span data-draw="v" data-source="kpi_ov" data-field="rev_m" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span data-draw="v" data-source="kpi_ov" data-field="rev_target_m" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span class="att" data-draw="v" data-source="kpi_ov" data-field="rev_att" data-row="0" data-fmt="pct">—</span></td></tr>
+        <tr><td>今年累计营收</td><td class="num"><span data-draw="v" data-source="kpi_ov" data-field="rev_ytd" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span data-draw="v" data-source="kpi_ov" data-field="ytd_target" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span class="att" data-draw="v" data-source="kpi_ov" data-field="ytd_att" data-row="0" data-fmt="pct">—</span></td></tr>
+        <tr><td>10月净利润</td><td class="num"><span data-draw="v" data-source="kpi_ov" data-field="np_m" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span data-draw="v" data-source="kpi_ov" data-field="np_target_m" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span class="att" data-draw="v" data-source="kpi_ov" data-field="np_att" data-row="0" data-fmt="pct">—</span></td></tr>
+        <tr><td>10月销售成交</td><td class="num"><span data-draw="v" data-source="kpi_sales" data-field="won_w" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span data-draw="v" data-source="kpi_sales" data-field="target_w" data-row="0" data-fmt="d1">—</span>万</td><td class="num"><span class="att" data-draw="v" data-source="kpi_sales" data-field="attainment" data-row="0" data-fmt="pct">—</span></td></tr>
+      </tbody></table>
+      <p class="bz-fine">目标为示例值，待确认；今年 <span data-draw="v" data-source="kpi_ov" data-field="months_hit" data-row="0">—</span> / <span data-draw="v" data-source="kpi_ov" data-field="months_n" data-row="0">—</span> 个月营收达标</p>
+    </div>
+    <div class="bz-card s4 " id="c-ov-profit"><div class="bz-card-h"><h3>毛利与净利润<span class="sub">按月 · 虚线为净利润目标</span></h3><div class="bz-legend"><span><i class="ln" style="background:#14957a"></i>毛利</span><span><i class="ln" style="background:#f5b83d"></i>净利润</span><span><i class="dsh" style="background:#14302a"></i>净利润目标（示例）</span></div></div><div class="bz-ch " data-draw="ov_profit" data-source="fin_monthly" aria-label="每月毛利与净利润"></div></div>
+    <div class="bz-card s4 " id="c-ov-leads"><div class="bz-card-h"><h3>线索与新签客户<span class="sub">全业务</span></h3><div class="bz-legend"><span><i class="" style="background:#4fcfa8"></i>线索</span><span><i class="ln" style="background:#14957a"></i>新签客户（右轴）</span></div></div><div class="bz-ch " data-draw="ov_leads" data-source="fin_monthly" aria-label="每月线索总量与新签客户数"></div></div>
+    <div class="bz-card s8 " id="c-ov-gantt"><div class="bz-card-h"><h3>待交付项目<span class="sub">在手订单 <b data-draw="v" data-source="kpi_ov" data-field="backlog" data-row="0" data-fmt="d1">—</b> 万 · <b data-draw="v" data-source="kpi_ov" data-field="backlog_n" data-row="0">—</b> 个项目 · <b class="warn-t" data-draw="v" data-source="kpi_ov" data-field="late_n" data-row="0">—</b> 个临期或延期</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>正常</span><span><i class="" style="background:#f5b83d"></i>临期</span><span><i class="" style="background:#f06b47"></i>延期/延期风险</span></div></div><div class="bz-ch " data-draw="backlog_gantt" data-source="backlog" aria-label="待交付项目时间轴"></div></div>
+    <div class="bz-card s4" id="c-ov-cash"><div class="bz-card-h"><h3>现金流<span class="sub">截至10月底</span></h3><span class="ic s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h15a3 3 0 013 3v7a3 3 0 01-3 3H6a3 3 0 01-3-3zM3 7l12-4v4M17 14h.01"/></svg></span></div>
+      <div class="bz-cash">
+        <div class="c1"><span>账面现金</span><b data-draw="v" data-source="fin_cash" data-field="cash_balance" data-row="0">—</b></div>
+        <div class="c2"><span>应收账款</span><b data-draw="v" data-source="fin_cash" data-field="receivable" data-row="0">—</b></div>
+        <div class="c3"><span>应付账款</span><b data-draw="v" data-source="fin_cash" data-field="payable" data-row="0">—</b></div>
+      </div>
+      <div class="bz-split"></div>
+      <div class="bz-card-h"><h3>风险预警</h3><button class="bz-link" data-goto="all">查看全部 →</button></div>
+      <div class="bz-alerts" data-draw="alerts" data-source="alerts" data-limit="5"></div>
+    </div>
+  </div>
+</section>
+
+<section class="bz-sec" id="edu" hidden>
+  <div class="bz-sec-h"><h2>漫剧招生</h2><p>10 月数据；“较前3月”为与 7–9 月平均值对比</p></div>
+  <div class="bz-kpis k4">
+    <div class="kc"><div class="kc-h"><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="kc-l">留资线索</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_edu" data-field="leads" data-row="0">—</b><span class="u">条</span></div><div class="kc-d">单条线索成本 ¥<b data-draw="v" data-source="kpi_edu" data-field="cpl" data-row="0">—</b></div><div class="kc-sp" data-draw="spark" data-source="edu_monthly" data-col="leads" data-color="#14957a" data-kind="area"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M9.5 10a3 3 0 100-6 3 3 0 000 6zM21 19v-1a4 4 0 00-3-3.8M16 4.2a3 3 0 010 5.6"/></svg></span><span class="kc-l">报名缴费</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_edu" data-field="enrolled" data-row="0">—</b><span class="u">人</span></div><div class="kc-d">在办班级 <b data-draw="v" data-source="kpi_edu" data-field="classes" data-row="0">—</b> 个</div><div class="kc-sp" data-draw="spark" data-source="edu_monthly" data-col="enrolled" data-color="#4b8bf0" data-kind="bar"></div></div>
+    <div class="kc alarm"><div class="kc-h"><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span><span class="kc-l">线索→报名转化率</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_edu" data-field="conv" data-row="0" data-fmt="pct">—</b></div><div class="kc-d"><span class="dl" data-draw="v" data-source="kpi_edu" data-field="conv_vs" data-row="0" data-fmt="dpct" data-good="up">—</span><span>较前3月</span></div><div class="kc-sp" data-draw="spark" data-source="edu_unit" data-col="conv" data-color="#f06b47" data-kind="area"></div></div>
+    <div class="kc alarm"><div class="kc-h"><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/></svg></span><span class="kc-l">获客成本（每学员）</span></div><div class="kc-v"><span class="u pre">¥</span><b data-draw="v" data-source="kpi_edu" data-field="cac" data-row="0">—</b></div><div class="kc-d"><span class="dl" data-draw="v" data-source="kpi_edu" data-field="cac_vs" data-row="0" data-fmt="dpct" data-good="down">—</span><span>较前3月</span></div><div class="kc-sp" data-draw="spark" data-source="edu_unit" data-col="cac" data-color="#f06b47" data-kind="area"></div></div>
+  </div>
+  <div class="bz-grid">
+    <div class="bz-card s5 " id="c-edu-funnel"><div class="bz-card-h"><h3>招生漏斗<span class="sub">10月 · 逐级转化</span></h3></div><div class="bz-ch " data-draw="edu_funnel" data-source="edu_funnel" aria-label="10月招生漏斗"></div></div>
+    <div class="bz-card s7 " id="c-edu-cost"><div class="bz-card-h"><h3>招生成本结构与获客成本<span class="sub">按月</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>广告投放</span><span><i class="" style="background:#4fcfa8"></i>平台成本</span><span><i class="" style="background:#bfe9db"></i>教学成本</span><span><i class="ln" style="background:#f06b47"></i>获客成本（右轴）</span></div></div><div class="bz-ch " data-draw="edu_cost" data-source="edu_monthly edu_unit" aria-label="每月招生成本构成与获客成本"></div></div>
+    <div class="bz-card s12 bz-gstrip" id="c-edu-gauges">
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_edu" data-col="refund_rate" data-max="0.16" data-h="140" data-color="#f06b47" data-color2="#f5b83d" data-bands="0.08:#4fcfa8,0.16:#f06b47" data-target="0.08" aria-label="退费率（红线 8%）"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_edu" data-field="refund_rate" data-row="0" data-fmt="pct">—</b><span>退费率（红线 8%）</span></div></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_edu" data-col="completion" data-max="1" data-h="140" data-color="#14957a" data-color2="#4fcfa8" data-bands="0.8:#f5b83d,1:#4fcfa8" aria-label="整体结业率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_edu" data-field="completion" data-row="0" data-fmt="pct">—</b><span>整体结业率</span></div></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_edu" data-col="ad_budget_use" data-max="1.5" data-h="140" data-color="#f5b83d" data-color2="#ffd77a" data-bands="1:#4fcfa8,1.5:#f06b47" data-target="1" aria-label="投放预算使用"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_edu" data-field="ad_budget_use" data-row="0" data-fmt="pct">—</b><span>投放预算使用</span></div></div>
+      <div class="bz-gside"><div><span class="ic m"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg></span><span>单学员毛利</span><b class="mv">¥<span data-draw="v" data-source="kpi_edu" data-field="gross_ps" data-row="0">—</span></b><em>较前3月 <span class="dl" data-draw="v" data-source="kpi_edu" data-field="gross_vs" data-row="0" data-fmt="dpct" data-good="up">—</span></em></div>
+      <div><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0115-6.7L21 8M21 3v5h-5"/></svg></span><span>10月退费</span><b class="mv"><span data-draw="v" data-source="kpi_edu" data-field="refunds" data-row="0">—</span><small>人</small></b><em>投放 <span data-draw="v" data-source="kpi_edu" data-field="ad_w" data-row="0" data-fmt="d1">—</span> 万 · 平台 <span data-draw="v" data-source="kpi_edu" data-field="platform_w" data-row="0" data-fmt="d1">—</span> 万</em></div></div>
+    </div>
+    <div class="bz-card s6 " id="c-edu-bubble"><div class="bz-card-h"><h3>投放渠道效果<span class="sub">气泡大小 = 投放金额</span></h3></div><div class="bz-ch " data-draw="edu_bubble" data-source="edu_channels" aria-label="各渠道线索成本与转化率气泡图"></div></div>
+    <div class="bz-card s6 " id="c-edu-conv"><div class="bz-card-h"><h3>转化率与退费率<span class="sub">按月</span></h3><div class="bz-legend"><span><i class="ln" style="background:#14957a"></i>线索→报名</span><span><i class="ln" style="background:#f06b47"></i>退费率</span></div></div><div class="bz-ch " data-draw="edu_conv" data-source="edu_unit" aria-label="每月转化率与退费率"></div></div>
+    <div class="bz-card s8 " id="c-edu-sites"><div class="bz-card-h"><h3>培训交付<span class="sub">按开班地点 · 今年累计</span></h3></div><div class="bz-sites" data-draw="edu_sites" data-source="edu_sites"></div></div>
+    <div class="bz-card s4 " id="c-edu-alerts"><div class="bz-card-h"><h3>招生预警<span class="sub">费用 · 成本 · 转化率</span></h3></div><div class="bz-alerts" data-draw="alerts" data-area="招生" data-source="alerts"></div></div>
+    <div class="bz-card s6 " id="c-edu-unit"><div class="bz-card-h"><h3>每学员毛利与成本<span class="sub">元/人</span></h3><div class="bz-legend"><span><i class="ln" style="background:#f06b47"></i>单学员成本</span><span><i class="ln" style="background:#14957a"></i>单学员毛利</span></div></div><div class="bz-ch " data-draw="edu_unit" data-source="edu_unit" aria-label="每月单学员毛利与成本"></div></div>
+    <div class="bz-card s6 " id="c-edu-ch"><div class="bz-card-h"><h3>渠道明细<span class="sub">10月</span></h3></div><div class="bz-tw"><table data-source="edu_channels" data-row-key="channel"><thead><tr><th data-field="channel">渠道</th><th class="num" data-field="spend">投放金额</th><th class="num" data-field="leads">线索</th><th class="num">线索成本</th><th class="num" data-field="enrolled">报名</th><th class="num">获客成本</th><th>转化率</th></tr></thead><tbody data-draw="edu_channels_tb"></tbody></table></div></div>
+  </div>
+</section>
+
+<section class="bz-sec" id="prod" hidden>
+  <div class="bz-sec-h"><h2>漫剧制作</h2><p>产能、返工按 10 月逐日数据；成本为截至 10 月底已发生</p></div>
+  <div class="bz-kpis k4">
+    <div class="kc"><div class="kc-h"><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 9h16M4 15h16M9 4v16"/></svg></span><span class="kc-l">在执行项目</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_prod" data-field="n" data-row="0">—</b><span class="u">个</span></div><div class="kc-d">合同额 <b data-draw="v" data-source="kpi_prod" data-field="contract_w" data-row="0" data-fmt="d1">—</b> 万 · 待交付 <b data-draw="v" data-source="kpi_prod" data-field="pending" data-row="0">—</b> 秒</div></div>
+    <div class="kc"><div class="kc-h"><span class="ic s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2"/></svg></span><span class="kc-l">日均产出（秒）</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_prod" data-field="out_avg" data-row="0">—</b><span class="u">秒</span></div><div class="kc-d">日均产能 <b data-draw="v" data-source="kpi_prod" data-field="cap_avg" data-row="0">—</b> 秒</div><div class="kc-sp" data-draw="spark" data-source="prod_daily" data-col="output_sec" data-color="#4b8bf0" data-kind="area"></div></div>
+    <div class="kc alarm"><div class="kc-h"><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0115-6.7L21 8M21 3v5h-5"/></svg></span><span class="kc-l">返工率（近7天）</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_prod" data-field="rework7" data-row="0" data-fmt="pct">—</b></div><div class="kc-d">此前 <b data-draw="v" data-source="kpi_prod" data-field="rework_prev" data-row="0" data-fmt="pct">—</b> · 不合格率 <b data-draw="v" data-source="kpi_prod" data-field="defect7" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="prod_quality" data-col="rework_rate" data-color="#f06b47" data-kind="area"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic m"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span><span class="kc-l">预计项目毛利率</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_prod" data-field="margin" data-row="0" data-fmt="pct">—</b></div><div class="kc-d"><b data-draw="v" data-source="kpi_prod" data-field="over_budget" data-row="0">—</b> 个项目预计超预算</div></div>
+  </div>
+  <div class="bz-grid">
+    <div class="bz-card s12 " id="c-prod-gantt"><div class="bz-card-h"><h3>项目交付进度<span class="sub">时间轴 · 色块为已交付占比</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>正常</span><span><i class="" style="background:#f5b83d"></i>临期</span><span><i class="" style="background:#f06b47"></i>延期风险</span></div></div><div class="bz-ch " data-draw="prod_gantt" data-source="prod_projects backlog" aria-label="在执行项目甘特图"></div></div>
+    <div class="bz-card s4 bz-gcol" id="c-prod-gauges"><div class="bz-card-h"><h3>产能与及时率</h3></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_prod" data-col="util" data-max="1" data-h="140" data-color="#14957a" data-color2="#4fcfa8" data-bands="0.7:#f5b83d,0.95:#4fcfa8,1:#f06b47" aria-label="产能利用率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_prod" data-field="util" data-row="0" data-fmt="pct">—</b><span>产能利用率</span></div></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_prod" data-col="ontime" data-max="1" data-h="140" data-color="#4b8bf0" data-color2="#8fb8ff" data-bands="0.85:#f06b47,0.95:#f5b83d,1:#4fcfa8" data-target="0.95" aria-label="交付及时率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_prod" data-field="ontime" data-row="0" data-fmt="pct">—</b><span>交付及时率</span></div></div>
+    </div>
+    <div class="bz-card s8 " id="c-prod-daily"><div class="bz-card-h"><h3>每日产出 vs 产能<span class="sub">10月 · 秒</span></h3><div class="bz-legend"><span><i class="" style="background:#4fcfa8"></i>产出</span><span><i class="" style="background:#f06b47"></i>返工</span><span><i class="dsh" style="background:#14957a"></i>产能</span></div></div><div class="bz-ch " data-draw="prod_daily" data-source="prod_daily" aria-label="10月每日产出、返工与产能"></div></div>
+    <div class="bz-card s4 " id="c-prod-radar"><div class="bz-card-h"><h3>团队能力模型<span class="sub">自有团队</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>A组</span><span><i class="" style="background:#f5b83d"></i>B组</span><span><i class="" style="background:#4b8bf0"></i>C组</span></div></div><div class="bz-ch " data-draw="team_radar" data-source="team_radar" aria-label="各制作组能力雷达图"></div></div>
+    <div class="bz-card s4 " id="c-prod-quality"><div class="bz-card-h"><h3>返工率与不合格率<span class="sub">逐日</span></h3><div class="bz-legend"><span><i class="ln" style="background:#f06b47"></i>返工率</span><span><i class="ln" style="background:#f5b83d"></i>不合格率</span></div></div><div class="bz-ch " data-draw="prod_quality" data-source="prod_quality" aria-label="10月逐日返工率与不合格率"></div></div>
+    <div class="bz-card s4 " id="c-prod-alerts"><div class="bz-card-h"><h3>制作预警<span class="sub">到期 · 超预算 · 返工</span></h3></div><div class="bz-alerts" data-draw="alerts" data-area="制作" data-limit="4" data-source="alerts"></div></div>
+    <div class="bz-card s8 " id="c-prod-cost"><div class="bz-card-h"><h3>项目成本拆解<span class="sub">已发生成本 · 黑线为预算</span></h3><div class="bz-legend"><span><i class="" style="background:#4b8bf0"></i>算力</span><span><i class="" style="background:#14957a"></i>人力</span><span><i class="" style="background:#f5b83d"></i>外包分成</span><span><i class="ln" style="background:#14302a"></i>预算</span></div></div><div class="bz-ch " data-draw="prod_cost" data-source="prod_projects" aria-label="各项目已发生成本构成与预算"></div></div>
+    <div class="bz-card s4 " id="c-prod-teams"><div class="bz-card-h"><h3>团队负荷<span class="sub">含外包</span></h3></div><div class="bz-ch short" data-draw="prod_teams" data-source="prod_teams" aria-label="各制作组负荷"></div></div>
+  </div>
+</section>
+
+<section class="bz-sec" id="ai" hidden>
+  <div class="bz-sec-h"><h2>企业AI服务</h2><p>定制项目、运维服务、订阅服务分开管理；每个定制项目单独核算毛利</p></div>
+  <div class="bz-kpis k4">
+    <div class="kc"><div class="kc-h"><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v13H3zM8 7V4h8v3M3 12h18"/></svg></span><span class="kc-l">合同总额</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ai" data-field="amount_w" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d">已回款 <b data-draw="v" data-source="kpi_ai" data-field="received_w" data-row="0" data-fmt="d1">—</b> 万 · 回款率 <b data-draw="v" data-source="kpi_ai" data-field="receive_rate" data-row="0" data-fmt="pct">—</b></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14v11H5zM12 4v4M9 13h.01M15 13h.01M9 16h6"/></svg></span><span class="kc-l">进行中定制项目</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ai" data-field="custom_active" data-row="0">—</b><span class="u">个</span></div><div class="kc-d"><span class="warn">已延期 <b data-draw="v" data-source="kpi_ai" data-field="delayed" data-row="0">—</b> 个</span></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic a"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg></span><span class="kc-l">今年增购</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ai" data-field="upsell_w" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d">来自老客户追加采购</div><div class="kc-sp" data-draw="spark" data-source="ai_monthly" data-col="upsell_amount" data-color="#f5b83d" data-kind="bar"></div></div>
+    <div class="kc warn"><div class="kc-h"><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-6.4A8 8 0 1121 12z"/></svg></span><span class="kc-l">10月售后工单</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_ai" data-field="tickets" data-row="0">—</b><span class="u">单</span></div><div class="kc-d"><span class="dl" data-draw="v" data-source="kpi_ai" data-field="tickets_mom" data-row="0" data-fmt="dpct" data-good="down">—</span><span>较9月</span></div><div class="kc-sp" data-draw="spark" data-source="ai_monthly" data-col="tickets" data-color="#f06b47" data-kind="area"></div></div>
+  </div>
+  <div class="bz-grid">
+    <div class="bz-card s12 bz-gstrip" id="c-ai-gauges">
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_ai" data-col="receive_rate" data-max="1" data-h="140" data-color="#14957a" data-color2="#4fcfa8" data-bands="0.5:#f06b47,0.8:#f5b83d,1:#4fcfa8" aria-label="整体回款率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_ai" data-field="receive_rate" data-row="0" data-fmt="pct">—</b><span>整体回款率</span></div></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_ai" data-col="custom_margin" data-max="1" data-h="140" data-color="#14957a" data-color2="#4fcfa8" data-bands="0.4:#f06b47,0.6:#f5b83d,1:#4fcfa8" aria-label="定制项目毛利率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_ai" data-field="custom_margin" data-row="0" data-fmt="pct">—</b><span>定制项目毛利率</span></div></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_ai" data-col="renew_rate" data-max="1" data-h="140" data-color="#4b8bf0" data-color2="#8fb8ff" data-bands="0.7:#f06b47,0.85:#f5b83d,1:#4fcfa8" data-target="0.9" aria-label="老客户续费率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_ai" data-field="renew_rate" data-row="0" data-fmt="pct">—</b><span>老客户续费率</span></div></div>
+      <div class="bz-gside"><div><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-6.4A8 8 0 1121 12z"/></svg></span><span>10月客户投诉</span><b class="mv"><span data-draw="v" data-source="kpi_ai" data-field="complaints" data-row="0">—</span><small>起</small></b><em>工单与投诉同步上升</em></div>
+      <div><span class="ic a"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v4M12 17h.01"/></svg></span><span>延期项目</span><b class="mv"><span data-draw="v" data-source="kpi_ai" data-field="delayed" data-row="0">—</span><small>个</small></b><em>见下方交付进度</em></div></div>
+    </div>
+    <div class="bz-card s12 " id="c-ai-ledger"><div class="bz-card-h"><h3>项目台账<span class="sub">合同金额与阶段回款节点</span></h3><div class="bz-seg" role="group" aria-label="按服务类型筛选"><button class="on" data-type="">全部</button><button data-type="定制项目">定制项目</button><button data-type="运维服务">运维服务</button><button data-type="订阅服务">订阅服务</button></div></div><div class="bz-tw"><table data-source="ai_contracts" data-row-key="id"><thead><tr><th data-field="id">编号</th><th data-field="project">项目</th><th data-field="customer">客户</th><th data-field="type">类型</th><th class="num" data-field="amount">合同额</th><th class="num" data-field="received">已回款</th><th data-field="receive_rate">回款进度</th><th data-field="next_node">下一回款节点</th><th class="num" data-field="next_node_amount">节点金额</th><th data-field="next_node_date">节点日期</th></tr></thead><tbody data-draw="ai_tb"></tbody></table></div></div>
+    <div class="bz-card s8 " id="c-ai-pipe"><div class="bz-card-h"><h3>定制项目交付进度<span class="sub">需求确认 → 开发 → 测试 → 上线 → 售后运维</span></h3></div><div class="bz-pl" data-draw="ai_pipeline" data-source="ai_contracts"></div></div>
+    <div class="bz-card s4 " id="c-ai-mix"><div class="bz-card-h"><h3>合同结构<span class="sub">按服务类型</span></h3></div><div class="bz-ch " data-draw="ai_mix" data-source="ai_mix" aria-label="各服务类型合同额占比"></div></div>
+    <div class="bz-card s8 " id="c-ai-margin"><div class="bz-card-h"><h3>定制项目成本与毛利<span class="sub">黑线为合同额</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>研发人力</span><span><i class="" style="background:#4b8bf0"></i>算力</span><span><i class="" style="background:#f5b83d"></i>第三方接口</span><span><i class="ln" style="background:#14302a"></i>合同额</span></div></div><div class="bz-ch " data-draw="ai_margin" data-source="ai_contracts" aria-label="各定制项目成本构成与合同额"></div></div>
+    <div class="bz-card s4 " id="c-ai-alerts"><div class="bz-card-h"><h3>延期预警</h3></div><div class="bz-alerts" data-draw="alerts" data-area="AI服务" data-source="alerts"></div></div>
+    <div class="bz-card s6 " id="c-ai-renew"><div class="bz-card-h"><h3>续费与增购<span class="sub">按月</span></h3><div class="bz-legend"><span><i class="" style="background:#c9d8d2"></i>到期客户</span><span><i class="" style="background:#14957a"></i>已续费</span><span><i class="ln" style="background:#f5b83d"></i>增购金额（右轴）</span></div></div><div class="bz-ch " data-draw="ai_upsell" data-source="ai_monthly" aria-label="每月到期、续费客户数与增购金额"></div></div>
+    <div class="bz-card s6 " id="c-ai-ticket"><div class="bz-card-h"><h3>售后工单与投诉<span class="sub">按月</span></h3><div class="bz-legend"><span><i class="" style="background:#4fcfa8"></i>工单</span><span><i class="ln" style="background:#f06b47"></i>投诉（右轴）</span></div></div><div class="bz-ch " data-draw="ai_retention" data-source="ai_monthly" aria-label="每月售后工单与投诉数量"></div></div>
+  </div>
+</section>
+
+<section class="bz-sec" id="sales" hidden>
+  <div class="bz-sec-h"><h2>企业服务 · 销售端</h2><p>10 月数据；组内按目标达成率排名，达成率低于 50% 的组内最后一名标为末位</p></div>
+  <div class="bz-kpis k4">
+    <div class="kc"><div class="kc-h"><span class="ic t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="kc-l">线索量</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_sales" data-field="leads" data-row="0">—</b><span class="u">条</span></div><div class="kc-d">有效率 <b data-draw="v" data-source="kpi_sales" data-field="valid_rate" data-row="0" data-fmt="pct">—</b> · 商机转化 <b data-draw="v" data-source="kpi_sales" data-field="opp_rate" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="sales_reps" data-col="leads" data-color="#14957a" data-kind="bar"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span><span class="kc-l">成交</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_sales" data-field="won" data-row="0">—</b><span class="u">单</span></div><div class="kc-d">商机成交率 <b data-draw="v" data-source="kpi_sales" data-field="win_rate" data-row="0" data-fmt="pct">—</b></div><div class="kc-sp" data-draw="spark" data-source="sales_reps" data-col="won" data-color="#4b8bf0" data-kind="bar"></div></div>
+    <div class="kc"><div class="kc-h"><span class="ic m"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/></svg></span><span class="kc-l">成交额</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_sales" data-field="won_w" data-row="0" data-fmt="d1">—</b><span class="u">万</span></div><div class="kc-d">目标 <b data-draw="v" data-source="kpi_sales" data-field="target_w" data-row="0" data-fmt="d1">—</b> 万 · 回款 <b data-draw="v" data-source="kpi_sales" data-field="collected_w" data-row="0" data-fmt="d1">—</b> 万</div><div class="kc-sp" data-draw="spark" data-source="sales_reps" data-col="won_amount" data-color="#4fcfa8" data-kind="bar"></div></div>
+    <div class="kc warn"><div class="kc-h"><span class="ic c"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v4M12 17h.01"/></svg></span><span class="kc-l">超7天未跟进线索</span></div><div class="kc-v"><b data-draw="v" data-source="kpi_sales" data-field="stale" data-row="0">—</b><span class="u">条</span></div><div class="kc-d">电话 <b data-draw="v" data-source="kpi_sales" data-field="calls" data-row="0">—</b> 通 · 上门 <b data-draw="v" data-source="kpi_sales" data-field="visits" data-row="0">—</b> 次</div><div class="kc-sp" data-draw="spark" data-source="sales_reps" data-col="stale_7d" data-color="#f06b47" data-kind="bar"></div></div>
+  </div>
+  <div class="bz-grid">
+    <div class="bz-card s4 " id="c-sales-funnel"><div class="bz-card-h"><h3>销售漏斗<span class="sub">10月</span></h3></div><div class="bz-ch " data-draw="sales_funnel" data-source="sales_funnel" aria-label="10月销售漏斗"></div></div>
+    <div class="bz-card s4 " id="c-sales-radar"><div class="bz-card-h"><h3>销售能力模型<span class="sub">一组 vs 二组</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>一组</span><span><i class="" style="background:#f5b83d"></i>二组</span></div></div><div class="bz-ch " data-draw="sales_radar" data-source="sales_radar" aria-label="两个销售组能力雷达图"></div></div>
+    <div class="bz-card s4 " id="c-sales-board"><div class="bz-card-h"><h3>销售排行榜<span class="sub">按成交额</span></h3></div><div class="bz-board" data-draw="sales_podium" data-source="sales_rank"></div></div>
+    <div class="bz-card s4 bz-gcol" id="c-sales-gauge"><div class="bz-card-h"><h3>业绩目标</h3></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="kpi_sales" data-col="attainment" data-max="1.2" data-h="160" data-color="#14957a" data-color2="#4fcfa8" data-bands="0.6:#f06b47,0.9:#f5b83d,1.2:#4fcfa8" data-target="1" aria-label="目标达成率"></div><div class="bz-gv"><b data-draw="v" data-source="kpi_sales" data-field="attainment" data-row="0" data-fmt="pct">—</b><span>目标达成率</span></div></div>
+      <div class="bz-mini3"><div><span>成交额</span><span class="mv"><b data-draw="v" data-source="kpi_sales" data-field="won_w" data-row="0" data-fmt="d1">—</b><small>万</small></span></div><div><span>目标</span><span class="mv"><b data-draw="v" data-source="kpi_sales" data-field="target_w" data-row="0" data-fmt="d1">—</b><small>万</small></span></div><div><span>回款</span><span class="mv"><b data-draw="v" data-source="kpi_sales" data-field="collected_w" data-row="0" data-fmt="d1">—</b><small>万</small></span></div></div>
+    </div>
+    <div class="bz-card s8 " id="c-sales-actions"><div class="bz-card-h"><h3>跟进动作<span class="sub">每位销售 · 10月</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>上门拜访</span><span><i class="" style="background:#4fcfa8"></i>商机</span><span><i class="ln" style="background:#f5b83d"></i>电话（右轴）</span></div></div><div class="bz-ch " data-draw="sales_actions" data-source="sales_reps" aria-label="每位销售的拜访、商机与电话数"></div></div>
+    <div class="bz-card s12 " id="c-sales-rank"><div class="bz-card-h"><h3>人效排名与末位预警</h3></div><div class="bz-tw"><table data-source="sales_rank" data-row-key="rep"><thead><tr><th data-field="rep">销售</th><th data-field="group">组别</th><th class="num" data-field="rank">组内排名</th><th class="num" data-field="leads">线索</th><th class="num" data-field="calls">电话</th><th class="num" data-field="visits">上门</th><th class="num" data-field="opps">商机</th><th class="num" data-field="won">成交</th><th class="num" data-field="win_rate">成交率</th><th class="num" data-field="won_amount">成交额</th><th data-field="attainment">目标达成</th><th class="num" data-field="collected">回款</th><th class="num" data-field="stale_7d">超7天未跟进</th><th data-field="flag">末位</th></tr></thead><tbody data-draw="sales_rank_tb"></tbody></table></div></div>
+    <div class="bz-card s6 " id="c-sales-src"><div class="bz-card-h"><h3>线索质量<span class="sub">按来源 · 气泡大小 = 线索量</span></h3></div><div class="bz-ch " data-draw="sales_src" data-source="sales_src" aria-label="各线索来源的有效率与赢单率气泡图"></div></div>
+    <div class="bz-card s6 " id="c-sales-lost"><div class="bz-card-h"><h3>丢单原因</h3></div><div class="bz-ch " data-draw="sales_lost" data-source="sales_lost" aria-label="丢单原因分布"></div></div>
+    <div class="bz-card s8 " id="c-sales-stale"><div class="bz-card-h"><h3>长时间未跟进原因<span class="sub">条数</span></h3></div><div class="bz-ch short" data-draw="sales_stale" data-source="sales_stale" aria-label="长时间未跟进原因分布"></div></div>
+    <div class="bz-card s4 " id="c-sales-alerts"><div class="bz-card-h"><h3>销售预警</h3></div><div class="bz-alerts" data-draw="alerts" data-area="销售" data-source="alerts"></div></div>
+  </div>
+</section>
+
+<section class="bz-sec" id="all" hidden>
+  <div class="bz-sec-h"><h2>综合看板</h2><p>人效、财务、风险与资源余量</p></div>
+  <div class="bz-risk" data-draw="risk_tiles" data-source="alerts"></div>
+  <div class="bz-grid">
+    <div class="bz-card s8 " id="c-all-alerts"><div class="bz-card-h"><h3>风险预警汇总</h3><span class="bz-badge">高风险 <b data-draw="alert_count" data-level="高" data-source="alerts">—</b> · 全部 <b data-draw="alert_count" data-source="alerts">—</b></span></div><div class="bz-tw tall"><table data-source="alerts"><thead><tr><th>等级</th><th>板块</th><th>类型</th><th>对象</th><th>说明</th></tr></thead><tbody data-draw="alerts_tb"></tbody></table></div>
+      <details class="bz-note"><summary>预警规则</summary>应收款逾期即预警（超 30 天为高）；退费率超 8%；获客成本较前 3 月均值涨超 20%；转化率降超 15%；月投放超 42 万；项目预计完工成本超预算；剩余天数不够按当前产能做完；距交付 14 天内；项目返工率超 8% 或近 3 天返工率超 10%；AI 项目延期（超 10 天为高）；销售超 7 天未跟进线索 ≥ 8 条或达成率低于 30%；团队负荷 ≥ 95%；当月算力超预算。阈值可以随时让我调整。</details></div>
+    <div class="bz-card s4 bz-gcol" id="c-all-res"><div class="bz-card-h"><h3>资源余量</h3><span class="sub">还能接新单吗</span></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="res_kpi" data-col="gpu_use" data-max="1.5" data-h="140" data-color="#f06b47" data-color2="#f5b83d" data-bands="1:#4fcfa8,1.5:#f06b47" data-target="1" aria-label="10月算力使用 / 预算"></div><div class="bz-gv"><b data-draw="v" data-source="res_kpi" data-field="gpu_use" data-row="0" data-fmt="pct">—</b><span>10月算力使用 / 预算</span></div></div>
+      <div class="bz-gw"><div class="bz-gauge" data-draw="gauge" data-source="res_kpi" data-col="ai_load" data-max="1" data-h="140" data-color="#4b8bf0" data-color2="#8fb8ff" data-bands="0.85:#4fcfa8,0.95:#f5b83d,1:#f06b47" data-target="0.85" aria-label="AI研发人力负荷"></div><div class="bz-gv"><b data-draw="v" data-source="res_kpi" data-field="ai_load" data-row="0" data-fmt="pct0">—</b><span>AI研发人力负荷</span></div></div>
+      <div class="bz-mini3"><div><span>算力成本</span><span class="mv"><b data-draw="v" data-source="res_kpi" data-field="gpu_cost_w" data-row="0" data-fmt="d1">—</b><small>万</small></span></div><div><span>制作余量</span><span class="mv"><b data-draw="v" data-source="res_kpi" data-field="prod_spare" data-row="0">—</b><small>秒/天</small></span></div><div><span>10月GPU小时</span><b data-draw="v" data-source="res_kpi" data-field="gpu_used" data-row="0">—</b></div></div>
+    </div>
+    <div class="bz-card s8 " id="c-all-fin"><div class="bz-card-h"><h3>财务走势<span class="sub">按月</span></h3><div class="bz-legend"><span><i class="ln" style="background:#14957a"></i>营收</span><span><i class="ln" style="background:#f06b47"></i>总成本费用</span><span><i class="ln" style="background:#f5b83d"></i>净利润</span></div></div><div class="bz-ch " data-draw="fin_trend" data-source="fin_monthly" aria-label="每月营收、总成本费用与净利润"></div></div>
+    <div class="bz-card s4 " id="c-all-ar"><div class="bz-card-h"><h3>应收账龄</h3></div><div class="bz-ch " data-draw="ar_aging" data-source="ar_aging" aria-label="应收款按逾期天数分段"></div><div class="bz-mini3 two"><div><span>应收账款</span><b data-draw="v" data-source="fin_cash" data-field="receivable" data-row="0">—</b></div><div><span>应付账款</span><b data-draw="v" data-source="fin_cash" data-field="payable" data-row="0">—</b></div></div></div>
+    <div class="bz-card s7 " id="c-all-gpu"><div class="bz-card-h"><h3>算力消耗<span class="sub">GPU 小时 · 按业务</span></h3><div class="bz-legend"><span><i class="" style="background:#14957a"></i>漫剧制作</span><span><i class="" style="background:#4b8bf0"></i>企业AI服务</span><span><i class="" style="background:#4fcfa8"></i>漫剧招生</span><span><i class="dsh" style="background:#f06b47"></i>预算</span></div></div><div class="bz-ch " data-draw="res_gpu" data-source="res_compute" aria-label="每月各业务GPU小时与预算"></div></div>
+    <div class="bz-card s5 " id="c-all-load"><div class="bz-card-h"><h3>人力负荷<span class="sub">85% 以上视为饱和</span></h3></div><div class="bz-ch " data-draw="res_load" data-source="prod_teams hr_depts" aria-label="各团队与部门人力负荷"></div></div>
+    <div class="bz-card s8 " id="c-all-hr"><div class="bz-card-h"><h3>人员人效<span class="sub">今年累计</span></h3></div><div class="bz-tw"><table data-source="hr_eff" data-row-key="dept"><thead><tr><th data-field="dept">部门</th><th class="num" data-field="headcount">人数</th><th class="num" data-field="revenue_ytd">累计营收</th><th class="num" data-field="per_head_w">人均产值(万)</th><th class="num" data-field="labor_cost_ytd">人力成本</th><th class="num" data-field="labor_ratio">人力成本占营收</th><th data-field="load">人力负荷</th></tr></thead><tbody data-draw="hr_tb"></tbody></table></div></div>
+    <div class="bz-card s4 " id="c-all-eff"><div class="bz-card-h"><h3>人均产值<span class="sub">万元/人 · 有营收的部门</span></h3></div><div class="bz-ch short" data-draw="hr_eff_ch" data-source="hr_eff" aria-label="各部门人均产值"></div></div>
+  </div>
+</section>
+  </main>
+  <p class="bz-foot">金额单位：元；指标卡中标“万”的为万元。数据为示例数据，仅用于展示看板结构。</p>
+</div>
+
+
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="runtime.js"></script>
+<script src="data.js"></script>
+<script src="lib.js"></script>
+<script src="calcs.js"></script>
+<script src="draws.js"></script>
+<script>__dashStart(window.__SAMPLE_DATA);</script>
+</body>
+</html>
