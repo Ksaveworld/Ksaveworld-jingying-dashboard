@@ -43,9 +43,10 @@ dash.draw('alert_count', (el) => {
 });
 
 (function tabs() {
-  const ids = ['ov', 'edu', 'prod', 'ai', 'sales', 'all'];
+  const ids = ['ov', 'wb', 'edu', 'prod', 'ai', 'sales', 'all'];
   const open = (id) => {
-    if (!ids.includes(id)) id = 'ov';
+    const allow = window.__tabAllow ? window.__tabAllow() : ids;
+    if (!ids.includes(id) || !allow.includes(id)) id = allow[0];
     document.querySelectorAll('.bz-sec').forEach((s) => { s.hidden = s.id !== id; });
     document.querySelectorAll('.bz-tab').forEach((b) => {
       const on = b.dataset.tab === id;
@@ -56,6 +57,7 @@ dash.draw('alert_count', (el) => {
   };
   document.querySelectorAll('.bz-tab').forEach((b) => b.addEventListener('click', () => open(b.dataset.tab)));
   document.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => { open(b.dataset.goto); window.scrollTo({ top: 0 }); }));
+  window.__openTab = open;
   open((location.hash || '').slice(1));
   let printed = null;
   window.addEventListener('beforeprint', () => {

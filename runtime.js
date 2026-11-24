@@ -31,8 +31,12 @@
       try { fn(el); } catch (e) { console.error(name, e); }
     });
   }
-  function runAll() { Object.keys(draws).forEach(run); }
+  const after = [];
+  function runAll() { Object.keys(draws).forEach(run); after.forEach((f) => { try { f(); } catch (e) { console.error(e); } }); }
   window.__dashStart = function (data) { DATA = data; runAll(); };
+  // 业务动作（核销、处置等）改动数据后调用：清空计算缓存并重绘
+  window.__dashRefresh = function () { Object.keys(cache).forEach((k) => delete cache[k]); runAll(); };
+  window.__dashAfter = function (f) { after.push(f); };
   let t;
   window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(runAll, 150); });
 })();
