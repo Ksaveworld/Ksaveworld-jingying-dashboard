@@ -62,7 +62,7 @@
 
   // 字段级控制：没有权限的卡片显示遮罩
   const MASK = {
-    sales: { 'c-sales-board': '具名排行需授权，本人可在工作台查看自己的分项', 'c-sales-rank': '具名排名需授权，本人可在工作台查看自己的分项', 'c-sales-radar': '组间对比仅主管可见', 'c-sales-gauge': '团队业绩目标仅主管可见' },
+    sales: { 'c-sales-board': '具名排行需授权，本人可在工作台查看自己的分项', 'c-sales-rank': '具名排名需授权，本人可在工作台查看自己的分项', 'c-sales-radar': '组间对比仅主管可见', 'c-sales-actions': '同事的跟进明细仅主管可见', 'c-sales-gauge': '团队业绩目标仅主管可见' },
     prod_lead: { 'c-prod-cost': null },
     finance: {},
     admin: {},
@@ -122,19 +122,20 @@
     ];
     const ms = D.ai_contracts.filter((a) => a.type === '定制项目').map((a) => {
       const st = { 需求确认: 0, 开发: 1, 测试: 2, 上线: 3, 售后运维: 4 }[a.stage] || 0;
-      return { id: a.id, project: a.project, customer: a.customer, stage: a.stage, node: a.next_node, amount: a.next_node_amount, plan: a.plan_date, delay: a.delay_days, flags: { self: st >= 2, internal: st >= 3, sent: false, accepted: false }, triggered: false, log: [] };
+      const had = inst.find((x) => x.customer === a.customer && x.period === '第2期' && x.item.includes(a.next_node));
+      return { id: a.id, project: a.project, customer: a.customer, stage: a.stage, node: a.next_node, amount: a.next_node_amount, plan: a.plan_date, delay: a.delay_days, flags: { self: st >= 2, internal: st >= 3, sent: !!had, accepted: !!had }, triggered: !!had, inst: had ? had.id : null, log: had ? [{ t: '2026-10-31', who: '系统', what: '已关联应收分期 ' + had.id + '（' + had.item + '）' }] : [] };
     });
-    const corrections = [{ id: 'GZ-01', rep: '周晓彤', item: '回款', from: '已回款 52 万', to: '已回款 64 万', basis: '10/30 蓝鲸教育到账 12 万，流水 BK5288', status: '待复核', by: '周晓彤', at: '2026-10-31' }];
+    const corrections = [{ id: 'GZ-01', rep: '周晓彤', item: '回款', field: 'collected', value: 640000, from: '520,000', to: '640,000', basis: '10/30 蓝鲸教育到账 12 万，流水 BK5288', status: '待复核', by: '周晓彤', at: '2026-10-31' }];
     const grants = [
       { id: 'SQ-01', who: '郑工（AI服务）', obj: 'HT-AI-2026-031 交付进度', act: '查看明细', reason: '联合交付数字人二期', approver: '', until: '2026-12-31', status: '待审批', by: '周导' },
       { id: 'SQ-00', who: '钱主管（培训）', obj: '杭州地点退费明细', act: '查看明细', reason: '退费复盘', approver: '系统管理员', until: '2026-11-15', status: '生效中', by: '钱主管' },
     ];
-    return { v: 1, role: 'ceo', clock: Date.UTC(2026, 10, 3, 1, 30), inst, bank, segs, batches, refunds, roster, opps, ms, corrections, grants, risk: {}, audit: [] };
+    return { v: 2, role: 'ceo', clock: Date.UTC(2026, 10, 3, 1, 30), inst, bank, segs, batches, refunds, roster, opps, ms, corrections, grants, risk: {}, audit: [] };
   }
 
   let S;
   try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
-  if (!S || S.v !== 1) S = initState();
+  if (!S || S.v !== 2) S = initState();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   const now = () => { S.clock += 7 * 60000; const d = new Date(S.clock + 8 * 3600000); return d.toISOString().slice(0, 16).replace('T', ' '); };
   const me = () => ROLES[S.role].name + '·' + ROLES[S.role].who.replace(/（.*/, '');
@@ -258,15 +259,16 @@
         }, 'pri')));
       }
       if (bal > 0 && S.role === 'finance') {
-        const cands = S.bank.filter((b) => !b.claimed);
-        const bs = sel(cands.map((b) => [b.id, b.id + ' · ' + b.date + ' · ' + b.payer + ' · ' + yuan(b.amount)]));
-        const a = inp({ type: 'number', value: Math.min(bal, cands[0] ? cands[0].amount : bal) });
-        bs.addEventListener('change', () => { const b = S.bank.find((z) => z.id === bs.value); a.value = Math.min(bal, b.amount); });
+        const avail = (b) => b.amount - (b.used || 0);
+        const cands = S.bank.filter((b) => avail(b) > 0);
+        const bs = sel(cands.map((b) => [b.id, b.id + ' · ' + b.date + ' · ' + b.payer + ' · 可用 ' + yuan(avail(b))]));
+        const a = inp({ type: 'number', value: Math.min(bal, cands[0] ? avail(cands[0]) : bal) });
+        bs.addEventListener('change', () => { const b = S.bank.find((z) => z.id === bs.value); a.value = Math.min(bal, avail(b)); });
         body.push(h('h4', '认领到账并核销'), cands.length ? h('div.wf-form', field('银行流水（待认领）', bs), field('核销金额', a), btn('确认核销', () => {
-          const b = S.bank.find((z) => z.id === bs.value); const v = Math.min(+a.value, bal, b.amount);
+          const b = S.bank.find((z) => z.id === bs.value); const v = Math.min(+a.value, bal, avail(b));
           if (!(v > 0)) return toast('核销金额需大于 0');
           const before = bal;
-          x.paid += v; x.paidNew = (x.paidNew || 0) + v; b.claimed = x.id;
+          x.paid += v; x.paidNew = (x.paidNew || 0) + v; b.used = (b.used || 0) + v; (b.alloc = b.alloc || []).push({ inst: x.id, amount: v });
           x.events.push({ t: now(), who: me(), what: '核销 ' + yuan(v) + '，银行流水 ' + b.id + '，余额 ' + yuan(x.amount - x.paid) });
           audit(x.contract + ' ' + x.period, '核销到账', '余额 ' + nf(before), '余额 ' + nf(x.amount - x.paid), '流水 ' + b.id);
           const rk = Object.keys(S.risk).find((k) => k.endsWith(x.customer + '·' + x.item));
@@ -335,8 +337,8 @@
       S.opps.filter((o) => o.owner === '陈思远' && !o.lost && o.last < '2026-10-25').forEach((o) => add('商机超 7 天未跟进：' + o.customer + ' · ' + o.name, '跟进', () => openDrawer(oppDrawer(o.id))));
     }
     if (R === 'finance') {
-      S.bank.filter((b) => !b.claimed).forEach((b) => add('到账待认领：' + b.id + ' ' + b.payer + ' ' + yuan(b.amount), '认领', () => openDrawer(bankDrawer(b.id))));
-      S.refunds.filter((f) => f.status === '待财务核对').forEach((f) => add('退费待核对：' + f.student + ' ' + f.klass + ' ' + yuan(f.amount), '核对', () => openDrawer(refundDrawer(f.id))));
+      S.bank.filter((b) => b.amount > (b.used || 0)).forEach((b) => add('到账待认领：' + b.id + ' ' + b.payer + ' 可用 ' + yuan(b.amount - (b.used || 0)), '认领', () => openDrawer(bankDrawer(b.id))));
+      S.refunds.filter((f) => f.status === '待财务核对' || f.status === '部分实付').forEach((f) => add((f.status === '部分实付' ? '退费待补付：' : '退费待核对：') + f.student + ' ' + f.klass + ' ' + yuan(f.amount - f.paid), '核对', () => openDrawer(refundDrawer(f.id))));
       S.ms.filter((m) => m.flags.accepted && !m.triggered).forEach((m) => add('里程碑已验收，确认转应收：' + m.customer + ' · ' + m.node, '复核', () => openDrawer(msDrawer(m.id))));
     }
     if (R === 'qc') S.segs.filter((s) => s.status === '待质检').forEach((s) => add('待质检：' + s.id + ' v' + s.ver + ' · ' + s.sec + ' 秒', '质检', () => openDrawer(segDrawer(s.id))));
@@ -428,11 +430,12 @@
   const W = [['业绩达成', 0.4], ['回款率', 0.2], ['跟进强度', 0.2], ['商机转化', 0.2]];
   function scoreRows() {
     const reps = D.sales_reps.filter((r) => r.group === '一组');
-    const fix = {}; S.corrections.filter((c) => c.status === '已通过' && c.delta).forEach((c) => { fix[c.rep] = (fix[c.rep] || 0) + c.delta; });
-    const mx = (k) => Math.max(...reps.map((r) => +r[k]));
+    const fix = {}; S.corrections.filter((c) => c.status === '已通过' && c.field).forEach((c) => { (fix[c.rep] = fix[c.rep] || {})[c.field] = c.value; });
+    const val = (r, k) => (fix[r.rep] && fix[r.rep][k] != null ? +fix[r.rep][k] : +r[k]);
+    const mx = (k) => Math.max(...reps.map((r) => val(r, k)));
     return reps.map((r) => {
-      const col = +r.collected + (fix[r.rep] || 0);
-      const p = [Math.min(1.2, r.attainment) / 1.2, Math.min(1, col / r.won_amount), (r.calls + r.visits * 10) / (mx('calls') + mx('visits') * 10), (r.opps / r.valid_leads) / Math.max(...reps.map((z) => z.opps / z.valid_leads))];
+      const won = val(r, 'won_amount'), att = won / +r.target;
+      const p = [Math.min(1.2, att) / 1.2, Math.min(1, val(r, 'collected') / won), (val(r, 'calls') + r.visits * 10) / (mx('calls') + mx('visits') * 10), (r.opps / r.valid_leads) / Math.max(...reps.map((z) => z.opps / z.valid_leads))];
       const total = Math.round(p.reduce((s, v, i) => s + v * W[i][1], 0) * 1000) / 10;
       return { rep: r.rep, parts: p.map((v) => Math.round(v * 1000) / 10), total, n: r.opps, pend: S.corrections.some((c) => c.rep === r.rep && c.status === '待复核') };
     }).sort((a, b) => b.total - a.total);
@@ -443,7 +446,7 @@
       const body = [kv([['销售', c.rep], ['更正分项', c.item], ['原值', c.from], ['申请值', c.to], ['依据', c.basis], ['提交', c.by + ' · ' + c.at], ['状态', c.status]])];
       if (c.status === '待复核' && S.role === 'sales_mgr') {
         const before = scoreRows().find((r) => r.rep === c.rep).total;
-        body.push(h('div.wf-form', btn('核实通过并重算', () => { c.status = '已通过'; c.delta = 120000; const after = scoreRows().find((r) => r.rep === c.rep).total; c.result = '综合分 ' + before + ' → ' + after; audit('人效 ' + c.rep, '复核更正', before, after, c.basis); commit(); toast('已重算：' + c.result); }, 'pri'),
+        body.push(h('div.wf-form', btn('核实通过并重算', () => { c.status = '已通过'; const after = scoreRows().find((r) => r.rep === c.rep).total; c.result = '综合分 ' + before + ' → ' + after; audit('人效 ' + c.rep, '复核更正', before, after, c.basis); commit(); toast('已重算：' + c.result); }, 'pri'),
           btn('驳回', () => { c.status = '已驳回'; audit('人效 ' + c.rep, '驳回更正', c.from, c.from, '依据不足'); commit(); }, 'danger')));
       }
       if (c.result) body.push(h('div.wf-note', '重算结果：', h('b', c.result)));
@@ -458,8 +461,9 @@
       h('tbody', vis.map((r) => h('tr', h('td.bz-strong', r.rep), r.parts.map((p) => h('td.num', p.toFixed(1))), h('td.num', r.n), h('td.num.bz-strong', r.total.toFixed(1)), self ? null : h('td.num', rows.indexOf(r) + 1), h('td', r.pend ? pill('更正待复核', 'sky') : r.n < 12 ? pill('样本不足·待复核', 'warn') : ''))))))];
     body.push(h('p.bz-fine', '规则版本 v0.3（示例，待客户书面确认）· 排名只用于辅助判断，不触发任何自动人事处置；具名排序、导出、人员处置分别授权。'));
     if (self) {
-      const item = sel(['回款', '成交额', '跟进次数']), to = inp({ placeholder: '应为多少' }), basis = inp({ placeholder: '依据：合同号、流水号' });
-      body.push(h('div.wf-form.inline', field('更正分项', item), field('申请值', to), field('依据', basis), btn('提交更正', () => { if (!basis.value) return toast('请附依据'); S.corrections.unshift({ id: 'GZ-' + (S.corrections.length + 1).toString().padStart(2, '0'), rep: '陈思远', item: item.value, from: '系统值', to: to.value || '—', basis: basis.value, status: '待复核', by: '陈思远', at: now().slice(0, 10) }); audit('人效 陈思远', '提交更正', '', item.value + ' ' + to.value, basis.value); commit(); toast('已提交主管复核'); }, 'pri')));
+      const FIELDS = { 回款: 'collected', 成交额: 'won_amount', 跟进次数: 'calls' };
+      const item = sel(Object.keys(FIELDS)), to = inp({ type: 'number', placeholder: '应为多少（元 / 次）' }), basis = inp({ placeholder: '依据：合同号、流水号' });
+      body.push(h('div.wf-form.inline', field('更正分项', item), field('申请值', to), field('依据', basis), btn('提交更正', () => { if (!basis.value) return toast('请附依据'); if (!(+to.value > 0)) return toast('请填写申请值'); const fk = FIELDS[item.value], cur = D.sales_reps.find((r) => r.rep === '陈思远')[fk]; S.corrections.unshift({ id: 'GZ-' + (S.corrections.length + 1).toString().padStart(2, '0'), rep: '陈思远', item: item.value, field: fk, value: +to.value, from: nf(cur), to: nf(+to.value), basis: basis.value, status: '待复核', by: '陈思远', at: now().slice(0, 10) }); audit('人效 陈思远', '提交更正', '', item.value + ' ' + to.value, basis.value); commit(); toast('已提交主管复核'); }, 'pri')));
     }
     const cs = S.corrections.filter((c) => !self || c.rep === '陈思远');
     if (cs.length) body.push(h('h4.wf-h4', '更正记录'), h('ul.wf-todos', cs.map((c) => h('li', { onclick: () => openDrawer(corrDrawer(c.id)) }, h('span.wf-tk', c.status), h('span', c.rep + ' · ' + c.item + '：' + c.from + ' → ' + c.to + (c.result ? '（' + c.result + '）' : ''))))));
@@ -534,9 +538,9 @@
     return () => {
       const f = S.refunds.find((z) => z.id === id);
       const body = [kv([['退费单', f.id], ['学员', f.student], ['原报名班次', f.klass], ['申请金额', yuan(f.amount)], ['原因', f.reason], ['登记', f.by + ' · ' + f.at], ['财务状态', f.status], ['实付', yuan(f.paid)]])];
-      if (S.role === 'finance' && f.status === '待财务核对') {
-        const a = inp({ type: 'number', value: f.amount });
-        body.push(h('h4', '核对原报名与实付流水'), h('div.wf-form', field('实际退款金额', a), btn('确认付款', () => { const v = Math.min(+a.value, f.amount); f.paid = v; f.status = v >= f.amount ? '已付' : '部分实付'; audit(f.id, '确认退款', '待财务核对', f.status + ' ' + yuan(v)); commit(); closeDrawer(); }, 'pri')));
+      if (S.role === 'finance' && (f.status === '待财务核对' || f.status === '部分实付')) {
+        const a = inp({ type: 'number', value: f.amount - f.paid });
+        body.push(h('h4', '核对原报名与实付流水'), h('div.wf-form', field('实际退款金额', a), btn('确认付款', () => { const v = Math.min(+a.value, f.amount - f.paid); if (!(v > 0)) return toast('付款金额需大于 0'); const st0 = f.status; f.paid += v; f.status = f.paid >= f.amount ? '已付' : '部分实付'; audit(f.id, '确认退款', st0, f.status + ' 本次 ' + yuan(v) + '，累计 ' + yuan(f.paid)); commit(); closeDrawer(); }, 'pri')));
       }
       return ['退费 · ' + f.student, f.klass, body];
     };
@@ -575,8 +579,10 @@
         body.push(h('h4', '触发条件已满足'), h('div.wf-form', btn('确认分期转为应收', () => {
           m.triggered = true; m.log.push({ t: now(), who: me(), what: m.node + ' ' + yuan(m.amount) + ' 转为应收，到期 +15 天' });
           const c = D.ai_contracts.find((a) => a.id === m.id);
+          const had = S.inst.find((x) => x.customer === m.customer && x.item.includes(m.node) && x.amount > x.paid);
+          if (had) { m.inst = had.id; had.events.push({ t: now(), who: me(), what: '里程碑验收确认，关联本期应收（不重复生成）' }); audit(m.id + ' ' + m.node, '关联已有应收', '', had.id); commit(); return; }
           S.inst.push({ id: 'AR' + (300 + S.inst.length), extra: true, customer: m.customer, contract: 'HT-' + m.id, cname: m.project, camount: c.amount, business: '企业AI服务', period: '第' + (Math.round(c.received / m.amount) + 1) + '期', item: m.project + '·' + m.node, due: '2026-11-20', amount: m.amount, paid: 0, owner: OWNER[m.customer] || '陈思远', events: [{ t: now(), who: me(), what: '客户验收后转为应收' }] });
-          audit(m.id + ' ' + m.node, '转为应收', '待触发', '已触发 ' + yuan(m.amount)); commit();
+          m.inst = S.inst[S.inst.length - 1].id; audit(m.id + ' ' + m.node, '转为应收', '待触发', '已触发 ' + yuan(m.amount)); commit();
         }, 'pri')));
       }
       body.push(h('h4', '记录'), m.log.length ? timeline(m.log) : h('div.bz-empty', '暂无'));
@@ -621,7 +627,7 @@
     return () => {
       const b = S.bank.find((z) => z.id === id);
       const cands = S.inst.filter((x) => x.amount > x.paid && b.payer.includes(x.customer.slice(0, 2)));
-      return ['到账待认领', b.id, [kv([['到账日', b.date], ['付款方', b.payer], ['金额', yuan(b.amount)], ['附言', b.memo]]), h('h4', '可能对应的应收分期'),
+      return ['到账待认领', b.id, [kv([['到账日', b.date], ['付款方', b.payer], ['金额', yuan(b.amount)], ['已分摊', yuan(b.used || 0)], ['可用余额', yuan(b.amount - (b.used || 0))], ['附言', b.memo]]), h('h4', '可能对应的应收分期'),
         cands.length ? h('ul.wf-todos', cands.map((x) => h('li', { onclick: () => openDrawer(arDrawer(x.id)) }, h('span.wf-tk', '去核销'), h('span', x.customer + ' ' + x.period + ' · 余额 ' + yuan(x.amount - x.paid))))) : h('div.wf-note', '未匹配到客户，保留在待核队列，交业务认领。')]];
     };
   }
